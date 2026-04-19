@@ -86,7 +86,7 @@ export default function FeedManager() {
 
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={(e) => { e.stopPropagation(); isSidebarOpen.set(true); }}
+                        onClick={(e) => { syncFeeds(); isSidebarOpen.set(true); }}
                         className={`text-gray-400 hover:text-emerald-400 hover:bg-emerald-400/10 p-2 rounded-lg transition-all duration-300 disabled:opacity-50 flex items-center justify-center ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-50 absolute pointer-events-none'}`}
                         title="Sincronizar fuentes"
                     >
