@@ -6,6 +6,10 @@ if (!MONGODB_URI) {
     throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
+// maldito nodejs nose como pudiste romper esto !!111!!
+import dns from 'node:dns';
+dns.setServers(["1.1.1.1"]);
+
 // Global cache for mongodb connection to prevent HMR issues
 let cachedClient = (global as any).mongoClient;
 let cachedDb = (global as any).mongoDb;
