@@ -1,11 +1,12 @@
 import type { APIRoute } from 'astro';
 import { connectDB } from '../../../lib/db.js';
 import { fetchAndSaveFeed } from '../../../lib/rss.js';
+import { cacheInvalidate } from '../../../lib/cache.js';
 
 export const POST: APIRoute = async () => {
     try {
         const db = await connectDB();
-        const feeds = await db.collection('feeds').find().toArray();
+        const feeds = await db.collection('feeds').find({}, { projection: { url: 1 } }).toArray();
 
         let successCount = 0;
         let failCount = 0;
@@ -15,6 +16,10 @@ export const POST: APIRoute = async () => {
             if (result.success) successCount++;
             else failCount++;
         }
+
+        // Invalidate caches since articles were updated
+        cacheInvalidate('feeds:');
+        cacheInvalidate('articles:');
 
         return new Response(JSON.stringify({
             success: true,

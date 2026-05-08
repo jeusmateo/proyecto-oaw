@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { connectDB } from '../../../lib/db.js';
 import { ObjectId } from 'mongodb';
+import { cacheInvalidate } from '../../../lib/cache.js';
 
 export const DELETE: APIRoute = async ({ params }) => {
     try {
@@ -14,6 +15,10 @@ export const DELETE: APIRoute = async ({ params }) => {
 
         await db.collection('articles').deleteMany({ feedId: objectId });
         await db.collection('feeds').deleteOne({ _id: objectId });
+
+        // Invalidate caches since data changed
+        cacheInvalidate('feeds:');
+        cacheInvalidate('articles:');
 
         return new Response(JSON.stringify({ success: true }), {
             status: 200,
