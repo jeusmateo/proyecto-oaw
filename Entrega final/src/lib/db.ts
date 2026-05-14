@@ -31,7 +31,11 @@ export async function connectDB(): Promise<Db> {
         try {
             console.log('Connecting to Native MongoDB...');
             const client = new MongoClient(MONGODB_URI as string, {
-                serverSelectionTimeoutMS: 5000 // fail fast if db is down
+                serverSelectionTimeoutMS: 5000, // fail fast if db is down
+                maxPoolSize: 10,                // limit concurrent connections
+                minPoolSize: 2,                 // keep 2 warm connections ready
+                maxIdleTimeMS: 30_000,          // close idle connections after 30s
+                compressors: ['zstd', 'snappy', 'zlib'], // wire-level compression
             });
             await client.connect();
 
@@ -39,11 +43,15 @@ export async function connectDB(): Promise<Db> {
             // We'll let the driver decide the default DB based on the URI, or default to rss_reader
             const db = client.db();
 
-            // Setup indexes
-            await db.collection('feeds').createIndex({ url: 1 }, { unique: true });
-            await db.collection('articles').createIndex({ link: 1 }, { unique: true });
-            await db.collection('articles').createIndex({ feedId: 1 });
-            await db.collection('articles').createIndex({ pubDate: -1 });
+            // Setup indexes — run in parallel since they are independent
+            await Promise.all([
+                db.collection('feeds').createIndex({ url: 1 }, { unique: true }),
+                db.collection('articles').createIndex({ link: 1 }, { unique: true }),
+                db.collection('articles').createIndex({ feedId: 1 }),
+                db.collection('articles').createIndex({ pubDate: -1 }),
+                db.collection('articles').createIndex({ title: 'text', description: 'text' }),
+                db.collection('articles').createIndex({ pubDate: -1, createdAt: -1 }),
+            ]);
 
             cachedClient = (global as any).mongoClient = client;
             cachedDb = (global as any).mongoDb = db;
